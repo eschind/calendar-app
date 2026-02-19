@@ -1,14 +1,11 @@
+import 'dotenv/config';
 import { PrismaClient } from '@/app/generated/prisma/client';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
-import { createClient } from '@libsql/client';
 import { LineupTransformer } from '@/app/lib/lineupTransformer';
-
-const libsql = createClient({
-  url: process.env.DATABASE_URL || 'file:./dev.db',
-});
 
 const adapter = new PrismaLibSql({
   url: process.env.DATABASE_URL || 'file:./dev.db',
+  authToken: process.env.DATABASE_AUTH_TOKEN,
 });
 
 const prisma = new PrismaClient({ adapter });
