@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch lineup from football-data.org
-    const matchData = await footballDataClient.getMatchLineup(footballDataId);
+    const matchData: any = await footballDataClient.getMatchLineup(footballDataId);
 
     // Determine which team is Man Utd (home or away)
     const isHomeTeam = matchData.homeTeam.id === 66; // Man Utd team ID
