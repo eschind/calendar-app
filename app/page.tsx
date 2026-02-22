@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import WeekView from './components/WeekView';
-import EventForm from './components/EventForm';
+import AgendaView from './components/AgendaView';
 import { CalendarEvent } from './types';
 
 export default function Home() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(new Date());
-  const [showEventForm, setShowEventForm] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [selectedHour, setSelectedHour] = useState<number | undefined>();
   const [timezone, setTimezone] = useState<string>('Asia/Jerusalem');
 
   useEffect(() => {
@@ -20,7 +17,6 @@ export default function Home() {
     startOfWeek.setDate(today.getDate() - dayOfWeek);
     startOfWeek.setHours(0, 0, 0, 0);
     setCurrentWeekStart(startOfWeek);
-
     fetchEvents();
   }, []);
 
@@ -64,71 +60,16 @@ export default function Home() {
     setCurrentWeekStart(startOfWeek);
   };
 
-  const handleDateClick = (date: Date, hour: number) => {
-    setSelectedDate(date);
-    setSelectedHour(hour);
-    setShowEventForm(true);
-  };
-
-  const handleSaveEvent = async (event: Omit<CalendarEvent, 'id'>) => {
-    try {
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(event),
-      });
-
-      if (response.ok) {
-        await fetchEvents();
-        setShowEventForm(false);
-        setSelectedDate(undefined);
-        setSelectedHour(undefined);
-      }
-    } catch (error) {
-      console.error('Error saving event:', error);
-    }
-  };
-
-  const handleCancelEvent = () => {
-    setShowEventForm(false);
-    setSelectedDate(undefined);
-    setSelectedHour(undefined);
-  };
-
-  const handleDeleteEvent = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
-
-    try {
-      const response = await fetch(`/api/events/${eventId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        await fetchEvents();
-      }
-    } catch (error) {
-      console.error('Error deleting event:', error);
-    }
-  };
-
   const currentWeek = getCurrentWeek();
-  const weekRange = `${currentWeek[0].toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  })} - ${currentWeek[6].toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  })}`;
+  const weekRange = `${currentWeek[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${currentWeek[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAFAFA' }}>
+      {/* Toolbar */}
       <div className="border-b bg-white" style={{ borderColor: '#E5E5E5' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex items-center justify-between">
+          {/* Desktop layout */}
+          <div className="hidden md:flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigateWeek('prev')}
@@ -179,39 +120,69 @@ export default function Home() {
             <div className="text-base font-semibold" style={{ color: '#1A1A1A' }}>
               {weekRange}
             </div>
-            <button
-              onClick={() => setShowEventForm(true)}
-              className="text-white px-4 py-1.5 rounded text-sm font-semibold transition-colors"
-              style={{ backgroundColor: '#1A1A1A' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#DA291C'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1A1A1A'}
+          </div>
+
+          {/* Mobile layout */}
+          <div className="flex md:hidden items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => navigateWeek('prev')}
+                className="px-2.5 py-1.5 rounded text-sm font-medium border"
+                style={{ color: '#333', borderColor: '#D5D5D5', backgroundColor: '#FFFFFF' }}
+              >
+                ←
+              </button>
+              <button
+                onClick={goToToday}
+                className="px-3 py-1.5 rounded text-sm font-semibold text-white"
+                style={{ backgroundColor: '#DA291C' }}
+              >
+                Today
+              </button>
+              <button
+                onClick={() => navigateWeek('next')}
+                className="px-2.5 py-1.5 rounded text-sm font-medium border"
+                style={{ color: '#333', borderColor: '#D5D5D5', backgroundColor: '#FFFFFF' }}
+              >
+                →
+              </button>
+            </div>
+            <select
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className="px-2 py-1.5 rounded text-xs border font-medium min-w-0"
+              style={{ color: '#333', borderColor: '#D5D5D5', backgroundColor: '#FFFFFF' }}
             >
-              + New Event
-            </button>
+              <option value="Asia/Jerusalem">Israel (IST)</option>
+              <option value="America/New_York">Eastern (ET)</option>
+              <option value="America/Chicago">Central (CT)</option>
+              <option value="America/Denver">Mountain (MT)</option>
+              <option value="America/Los_Angeles">Pacific (PT)</option>
+              <option value="Europe/London">London (GMT)</option>
+              <option value="Europe/Paris">Paris (CET)</option>
+              <option value="Asia/Tokyo">Tokyo (JST)</option>
+              <option value="Australia/Sydney">Sydney (AEDT)</option>
+              <option value="UTC">UTC</option>
+            </select>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Desktop: week grid */}
+      <div className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <WeekView
             events={events}
             currentWeek={currentWeek}
-            onDateClick={handleDateClick}
-            onDeleteEvent={handleDeleteEvent}
             timezone={timezone}
           />
         </div>
       </div>
 
-      {showEventForm && (
-        <EventForm
-          onSave={handleSaveEvent}
-          onCancel={handleCancelEvent}
-          initialDate={selectedDate}
-          initialHour={selectedHour}
-        />
-      )}
+      {/* Mobile: agenda list */}
+      <div className="block md:hidden max-w-2xl mx-auto">
+        <AgendaView events={events} timezone={timezone} />
+      </div>
     </div>
   );
 }

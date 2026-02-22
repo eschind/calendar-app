@@ -81,7 +81,7 @@ export default function NewsPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAFAFA' }}>
-      <div className="max-w-4xl mx-auto px-4 py-10">
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-10">
         <h1 className="text-2xl font-bold mb-8 uppercase tracking-wide" style={{ color: '#1A1A1A' }}>
           Latest News
         </h1>
@@ -112,27 +112,25 @@ export default function NewsPage() {
                 style={{ borderColor: '#E5E5E5' }}
               >
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {article.source && (
-                        <span
-                          className="text-xs font-semibold px-2 py-0.5 rounded"
-                          style={{ backgroundColor: '#DA291C', color: '#FFFFFF' }}
-                        >
-                          {article.source}
-                        </span>
-                      )}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    {article.source && (
                       <span
                         className="text-xs font-semibold px-2 py-0.5 rounded"
-                        style={{
-                          backgroundColor: LABEL_STYLES[article.label].bg,
-                          color: LABEL_STYLES[article.label].text,
-                        }}
+                        style={{ backgroundColor: '#DA291C', color: '#FFFFFF' }}
                       >
-                        {article.label}
+                        {article.source}
                       </span>
-                    </div>
-                    <span className="text-xs" style={{ color: '#999999' }}>
+                    )}
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded"
+                      style={{
+                        backgroundColor: LABEL_STYLES[article.label].bg,
+                        color: LABEL_STYLES[article.label].text,
+                      }}
+                    >
+                      {article.label}
+                    </span>
+                    <span className="text-xs ml-auto" style={{ color: '#999999' }}>
                       {formatDate(article.pubDate)}
                     </span>
                   </div>
