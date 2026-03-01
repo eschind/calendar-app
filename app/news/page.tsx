@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 type NewsLabel = 'Results' | 'Transfers' | 'Other';
 
-const LABEL_STYLES: Record<NewsLabel, { bg: string; text: string }> = {
-  Results: { bg: '#E8F5E9', text: '#2E7D32' },
-  Transfers: { bg: '#F3E5F5', text: '#7B1FA2' },
-  Other: { bg: '#ECEFF1', text: '#546E7A' },
+const ALL_LABELS: NewsLabel[] = ['Results', 'Transfers', 'Other'];
+
+const LABEL_STYLES: Record<NewsLabel, { bg: string; text: string; activeBg: string; activeText: string }> = {
+  Results: { bg: '#E8F5E9', text: '#2E7D32', activeBg: '#2E7D32', activeText: '#FFFFFF' },
+  Transfers: { bg: '#F3E5F5', text: '#7B1FA2', activeBg: '#7B1FA2', activeText: '#FFFFFF' },
+  Other: { bg: '#ECEFF1', text: '#546E7A', activeBg: '#546E7A', activeText: '#FFFFFF' },
 };
 
 interface NewsItem {
@@ -25,8 +27,23 @@ export default function NewsPage() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [selectedLabels, setSelectedLabels] = useState<Set<NewsLabel>>(new Set());
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
+
+  const filteredArticles = useMemo(() => {
+    if (selectedLabels.size === 0) return articles;
+    return articles.filter((a: NewsItem) => selectedLabels.has(a.label));
+  }, [articles, selectedLabels]);
+
+  const toggleLabel = (label: NewsLabel) => {
+    setSelectedLabels((prev: Set<NewsLabel>) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
 
   const fetchNews = useCallback(async (pageNum: number) => {
     if (loadingRef.current) return;
@@ -82,9 +99,40 @@ export default function NewsPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAFAFA' }}>
       <div className="max-w-4xl mx-auto px-4 py-6 sm:py-10">
-        <h1 className="text-2xl font-bold mb-8 uppercase tracking-wide" style={{ color: '#1A1A1A' }}>
+        <h1 className="text-2xl font-bold mb-6 uppercase tracking-wide" style={{ color: '#1A1A1A' }}>
           Latest News
         </h1>
+
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          {ALL_LABELS.map(label => {
+            const isSelected = selectedLabels.has(label);
+            const s = LABEL_STYLES[label];
+            return (
+              <button
+                key={label}
+                onClick={() => toggleLabel(label)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors"
+                style={{
+                  backgroundColor: isSelected ? s.activeBg : s.bg,
+                  color: isSelected ? s.activeText : s.text,
+                  border: `1.5px solid ${isSelected ? s.activeBg : s.text}`,
+                }}
+              >
+                {label}
+                {isSelected && <span style={{ fontSize: '0.7rem', lineHeight: 1 }}>✕</span>}
+              </button>
+            );
+          })}
+          {selectedLabels.size > 0 && (
+            <button
+              onClick={() => setSelectedLabels(new Set())}
+              className="text-xs font-medium px-2 py-1.5 underline underline-offset-2"
+              style={{ color: '#999999' }}
+            >
+              Clear all
+            </button>
+          )}
+        </div>
 
         {initialLoad ? (
           <div className="flex flex-col gap-4">
@@ -102,7 +150,7 @@ export default function NewsPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {articles.map((article, index) => (
+            {filteredArticles.map((article, index) => (
               <a
                 key={`${article.link}-${index}`}
                 href={article.link}
@@ -159,15 +207,15 @@ export default function NewsPage() {
           </div>
         )}
 
-        {!hasMore && articles.length > 0 && (
+        {!hasMore && filteredArticles.length > 0 && (
           <p className="text-center py-8 text-xs uppercase tracking-wider" style={{ color: '#BBBBBB' }}>
             End of articles
           </p>
         )}
 
-        {!initialLoad && articles.length === 0 && (
+        {!initialLoad && filteredArticles.length === 0 && (
           <p className="text-center py-8 text-base" style={{ color: '#999999' }}>
-            No news articles found.
+            {selectedLabels.size > 0 ? 'No articles match the selected filters.' : 'No news articles found.'}
           </p>
         )}
       </div>
