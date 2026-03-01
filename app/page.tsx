@@ -175,6 +175,8 @@ export default function Home() {
             events={events}
             currentWeek={currentWeek}
             timezone={timezone}
+            onDateClick={() => {}}
+            onDeleteEvent={() => {}}
           />
         </div>
       </div>
